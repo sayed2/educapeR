@@ -208,8 +208,6 @@ getNewStudentFeed <- function(data = "") {
   if (check == TRUE) {
     dbWriteTable(con, name= name, value= df,
                  append = TRUE, overwrite = FALSE, row.names = FALSE)
-    count <- 2
-    return(count)
   } else {
     query <- paste0("CREATE TABLE"," ",name, "
                     (courseid varchar(45),
@@ -226,39 +224,42 @@ getNewStudentFeed <- function(data = "") {
     return(count)
   }
   
-  #### While loop come here
-  
-  
-  # Retrieve the table if it exist:
-  time <- toString(as.Date(Sys.time()))
-  courseid <- toString(df[1,"courseid"])
-  
-  table0 = paste0("select * FROM"," ",name,"WHERE time LIKE"," ",time)
-  rs = dbSendQuery(educDB, table0)
-  data0 = fetch(rs, n=-1)
-  
-  # Retrieve data sent as push notification from diagnosis table:
-  table0 = paste0("select * FROM"," ","diagnosis","WHERE time LIKE"," ",time," ","AND courseid ="," ",courseid)
-  rs = dbSendQuery(educDB, table0)
-  data_push <- fetch(rs, n=-1)
-  
-  
-  endtime = Sys.time() + 10800   # Cental europe area we add 10800 second to get turkey time
-  lastfeed = min(data0[,"time"])
-  margin = endtime - lastfeed
-  if ( margin >= 3 ) {
-    # Run the function that make the estimation 
+  while( count == 1) {
+    # WE wont retrieve table:
+    time <- toString(as.Date(Sys.time()))
+    # courseid <- toString(df[1,"courseid"]) # we are supposing that courseid is just one so we wont use it in sql query
     
-    # return
-    output
-    # Send output to Firebase (it contains curl to Firebase)
+    table0 = paste0("select * FROM"," ",name,"WHERE time LIKE"," ",time)
+    rs = dbSendQuery(educDB, table0)
+    data0 = fetch(rs, n=-1)
     
-    # Send output to data base
-    dbWriteTable(con, name = "report", value = output, nrows = nrow(output) , row.names = FALSE,
-                 overwrite = FALSE, append = 1)
-    count = 3  # arbitrary value to end the while loop
+    # Retrieve data sent as push notification from diagnosis table:
+    table0 = paste0("select * FROM"," ","diagnosis","WHERE time LIKE"," ",time)
+    rs = dbSendQuery(educDB, table0)
+    data_push <- fetch(rs, n=-1)
+    
+    
+    endtime = Sys.time() + 10800   # Cental europe area we add 10800 second to get turkey time
+    lastfeed = min(data0[,"time"])
+    margin = endtime - lastfeed
+    if ( margin >= 3 ) {
+      # Run the function that make the estimation 
+      
+      # Send output to Firebase (it contains curl to Firebase)
+      
+      # Send output to data base
+      dbWriteTable(con, name = "report", value = output, nrows = nrow(output) , row.names = FALSE,
+                   overwrite = FALSE, append = 1)
+      count = 3  # arbitrary value to end the while loop
+    }
   }
+  
 }
+
+
+
+
+
 # Data to be returned
 output <- data.frame(courseid = character(), time = character(), index = character(), accuracy = integer(),
                      percentage = integer() , stringsAsFactors = FALSE)
@@ -270,17 +271,6 @@ output[1,4] <- 70
 #
 json_output <- toJSON(output, dataframe = 'columns', raw = 'base64')
 json_output
-
-
-  }
-
-
-
-
-
-
-
-
 
 
 
@@ -315,5 +305,12 @@ output[2,3] <- "How was the lesson"
 
 output
 
-
-
+i = 20
+n =10
+while(i != 1) {
+  i = i - 1
+  n = n+2
+  #i = 1
+  print(n)
+}
+n
