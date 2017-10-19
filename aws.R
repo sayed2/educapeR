@@ -193,14 +193,7 @@ getNewStudentFeed <- function(data = "") {
   con <- dbConnect(RMySQL::MySQL(), dbname = "educDB", username = "sayed2",
                    password = "Educaper90",
                    host = "educdb.cruj7xzmfriy.eu-central-1.rds.amazonaws.com")
-  # Algorithm ##################################################################
   
-  
-  
-  
-  
-  
-  ##############################################################################
   # Send data coming one by one to educDB:
   ref0 <- toString(df[1,1])
   # Check if the table of enrolled students exists or not
@@ -211,75 +204,75 @@ getNewStudentFeed <- function(data = "") {
   # Listing Tables
   tables_list <- dbListTables(con)
   check <- name %in% tables_list
+  count = as.numeric()
   if (check == TRUE) {
     dbWriteTable(con, name= name, value= df,
                  append = TRUE, overwrite = FALSE, row.names = FALSE)
+    count <- 2
+    return(count)
   } else {
     query <- paste0("CREATE TABLE"," ",name, "
-                            (courseid varchar(45),
-                            studentid varchar(45),
-                            question int(11),
-                            feedicon varchar(45),
-                            time varchar(45),
-                            PRIMARY KEY (courseid, studentid, time)
-                            )")
+                    (courseid varchar(45),
+                    studentid varchar(45),
+                    question int(11),
+                    feedicon varchar(45),
+                    time varchar(45),
+                    PRIMARY KEY (courseid, studentid, time)
+                    )")
     dbSendQuery(con, query) 
     dbWriteTable(con, name= name, value= df, nrows = nrow(df) , row.names = FALSE,
                  overwrite = FALSE, append = 1)
+    count <- 1
+    return(count)
   }
   
+  #### While loop come here
+  
+  
   # Retrieve the table if it exist:
-  time <- toString(as.Date(df[1,"time"]))
+  time <- toString(as.Date(Sys.time()))
   courseid <- toString(df[1,"courseid"])
-  if (check == TRUE) {
-    table0 = paste0("select courseid, studentid, question, feedicon, time FROM"," ",name,"WHERE time LIKE"," ",time," ","AND courseid ="," ",courseid)
-
-    rs = dbSendQuery(educDB, table0)
-    data0 = fetch(rs, n=-1)
-  }
+  
+  table0 = paste0("select * FROM"," ",name,"WHERE time LIKE"," ",time)
+  rs = dbSendQuery(educDB, table0)
+  data0 = fetch(rs, n=-1)
+  
   # Retrieve data sent as push notification from diagnosis table:
   table0 = paste0("select * FROM"," ","diagnosis","WHERE time LIKE"," ",time," ","AND courseid ="," ",courseid)
   rs = dbSendQuery(educDB, table0)
-  
   data_push <- fetch(rs, n=-1)
-    if (nrow(data0) >= nrow(data_push)) {
-      # Run the function that make the estimation 
-      
-      # Send data to Firebase (it contains curl to Firebase)
-      
-      # Send data to data base
-      dbWriteTable(con, name= name, value= output, nrows = nrow(output) , row.names = FALSE,
-                   overwrite = FALSE, append = 1)
-    } else {
-      endtime = Sys.time() + 10800
-      lastfeed = min(data[,"time"])
-      margin = endtime - lastfeed
-      if ( margin >= 3 ) {
-        # Run the function that make the estimation 
-        
-        # return
-        output
-        # Send output to Firebase (it contains curl to Firebase)
-        
-        # Send output to data base
-        dbWriteTable(con, name = "report", value = output, nrows = nrow(output) , row.names = FALSE,
-                     overwrite = FALSE, append = 1)
-      }
-    }
-  # Data to be returned
-  output <- data.frame(courseid = character(), time = character(), index = character(), accuracy = integer(),
-                       percentage = integer() , stringsAsFactors = FALSE)
-  # for testing
-  output[1,1] <- 'CS101'
-  output[1,2] <- 'Clarity'
-  output[1,3] <- 60
-  output[1,4] <- 70
-  #
-  json_output <- toJSON(output, dataframe = 'columns', raw = 'base64')
-  json_output
   
   
+  endtime = Sys.time() + 10800   # Cental europe area we add 10800 second to get turkey time
+  lastfeed = min(data0[,"time"])
+  margin = endtime - lastfeed
+  if ( margin >= 3 ) {
+    # Run the function that make the estimation 
+    
+    # return
+    output
+    # Send output to Firebase (it contains curl to Firebase)
+    
+    # Send output to data base
+    dbWriteTable(con, name = "report", value = output, nrows = nrow(output) , row.names = FALSE,
+                 overwrite = FALSE, append = 1)
+    count = 3  # arbitrary value to end the while loop
+  }
 }
+# Data to be returned
+output <- data.frame(courseid = character(), time = character(), index = character(), accuracy = integer(),
+                     percentage = integer() , stringsAsFactors = FALSE)
+# for testing
+output[1,1] <- 'CS101'
+output[1,2] <- 'Clarity'
+output[1,3] <- 60
+output[1,4] <- 70
+#
+json_output <- toJSON(output, dataframe = 'columns', raw = 'base64')
+json_output
+
+
+  }
 
 
 
